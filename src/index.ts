@@ -42,7 +42,7 @@ app.post('/shorten', async (req: Request, res: Response) => {
     }
 
     // Check if URL already exists
-    const existingUrls = await database.getAllUrls();
+    const existingUrls = database.getAllUrls();
     const existingUrl = existingUrls.find(
       (u) => u.originalUrl === normalizedUrl
     );
@@ -58,7 +58,7 @@ app.post('/shorten', async (req: Request, res: Response) => {
     }
 
     const shortCode = generateShortCode();
-    const urlRecord = await database.createUrl(shortCode, normalizedUrl);
+    const urlRecord = database.createUrl(shortCode, normalizedUrl);
 
     res.status(201).json({
       shortCode: urlRecord.shortCode,
@@ -74,17 +74,17 @@ app.post('/shorten', async (req: Request, res: Response) => {
 });
 
 // Redirect to original URL
-app.get('/:shortCode', async (req: Request, res: Response) => {
+app.get('/:shortCode', (req: Request, res: Response) => {
   try {
-    const { shortCode } = req.params;
-    const urlRecord = await database.getUrlByShortCode(shortCode);
+    const shortCode = req.params.shortCode as string;
+    const urlRecord = database.getUrlByShortCode(shortCode);
 
     if (!urlRecord) {
       return res.status(404).json({ error: 'Short URL not found' });
     }
 
     // Increment click count
-    await database.incrementClickCount(shortCode);
+    database.incrementClickCount(shortCode);
 
     res.redirect(urlRecord.originalUrl);
   } catch (error) {
@@ -94,9 +94,9 @@ app.get('/:shortCode', async (req: Request, res: Response) => {
 });
 
 // Get all URLs
-app.get('/api/urls', async (req: Request, res: Response) => {
+app.get('/api/urls', (req: Request, res: Response) => {
   try {
-    const urls = await database.getAllUrls();
+    const urls = database.getAllUrls();
     res.json(urls);
   } catch (error) {
     console.error('Error fetching URLs:', error);
@@ -105,10 +105,10 @@ app.get('/api/urls', async (req: Request, res: Response) => {
 });
 
 // Get URL statistics
-app.get('/api/stats/:shortCode', async (req: Request, res: Response) => {
+app.get('/api/stats/:shortCode', (req: Request, res: Response) => {
   try {
-    const { shortCode } = req.params;
-    const urlRecord = await database.getUrlByShortCode(shortCode);
+    const shortCode = req.params.shortCode as string;
+    const urlRecord = database.getUrlByShortCode(shortCode);
 
     if (!urlRecord) {
       return res.status(404).json({ error: 'Short URL not found' });
@@ -128,10 +128,10 @@ app.get('/api/stats/:shortCode', async (req: Request, res: Response) => {
 });
 
 // Delete URL
-app.delete('/api/urls/:shortCode', async (req: Request, res: Response) => {
+app.delete('/api/urls/:shortCode', (req: Request, res: Response) => {
   try {
-    const { shortCode } = req.params;
-    const deleted = await database.deleteUrl(shortCode);
+    const shortCode = req.params.shortCode as string;
+    const deleted = database.deleteUrl(shortCode);
 
     if (!deleted) {
       return res.status(404).json({ error: 'Short URL not found' });

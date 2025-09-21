@@ -1,6 +1,3 @@
-import sqlite3 from 'sqlite3';
-import { promisify } from 'util';
-
 export interface UrlRecord {
   id: number;
   shortCode: string;
@@ -10,85 +7,54 @@ export interface UrlRecord {
   lastClickedAt: string | null;
 }
 
-class Database {
-  private db: sqlite3.Database;
+class InMemoryDatabase {
+  private urls: Map<string, UrlRecord> = new Map();
+  private nextId = 1;
 
   constructor() {
-    this.db = new sqlite3.Database('./urls.db');
-    this.init();
+    console.log('📊 In-memory database initialized');
   }
 
-  private async init(): Promise<void> {
-    const run = promisify(this.db.run.bind(this.db));
-
-    await run(`
-      CREATE TABLE IF NOT EXISTS urls (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        shortCode TEXT UNIQUE NOT NULL,
-        originalUrl TEXT NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        clickCount INTEGER DEFAULT 0,
-        lastClickedAt DATETIME
-      )
-    `);
-  }
-
-  async createUrl(shortCode: string, originalUrl: string): Promise<UrlRecord> {
-    const run = promisify(this.db.run.bind(this.db));
-    const get = promisify(this.db.get.bind(this.db));
-
-    await run('INSERT INTO urls (shortCode, originalUrl) VALUES (?, ?)', [
+  createUrl(shortCode: string, originalUrl: string): UrlRecord {
+    const now = new Date().toISOString();
+    const urlRecord: UrlRecord = {
+      id: this.nextId++,
       shortCode,
       originalUrl,
-    ]);
+      createdAt: now,
+      clickCount: 0,
+      lastClickedAt: null,
+    };
 
-    const result = (await get('SELECT * FROM urls WHERE shortCode = ?', [
-      shortCode,
-    ])) as UrlRecord;
-
-    return result;
+    this.urls.set(shortCode, urlRecord);
+    return urlRecord;
   }
 
-  async getUrlByShortCode(shortCode: string): Promise<UrlRecord | null> {
-    const get = promisify(this.db.get.bind(this.db));
-
-    const result = (await get('SELECT * FROM urls WHERE shortCode = ?', [
-      shortCode,
-    ])) as UrlRecord | undefined;
-
-    return result || null;
+  getUrlByShortCode(shortCode: string): UrlRecord | null {
+    return this.urls.get(shortCode) || null;
   }
 
-  async incrementClickCount(shortCode: string): Promise<void> {
-    const run = promisify(this.db.run.bind(this.db));
+  incrementClickCount(shortCode: string): void {
+    const urlRecord = this.urls.get(shortCode);
+    if (urlRecord) {
+      urlRecord.clickCount++;
+      urlRecord.lastClickedAt = new Date().toISOString();
+    }
+  }
 
-    await run(
-      'UPDATE urls SET clickCount = clickCount + 1, lastClickedAt = CURRENT_TIMESTAMP WHERE shortCode = ?',
-      [shortCode]
+  getAllUrls(): UrlRecord[] {
+    return Array.from(this.urls.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }
 
-  async getAllUrls(): Promise<UrlRecord[]> {
-    const all = promisify(this.db.all.bind(this.db));
-
-    const results = (await all(
-      'SELECT * FROM urls ORDER BY createdAt DESC'
-    )) as UrlRecord[];
-    return results;
-  }
-
-  async deleteUrl(shortCode: string): Promise<boolean> {
-    const run = promisify(this.db.run.bind(this.db));
-
-    const result = await run('DELETE FROM urls WHERE shortCode = ?', [
-      shortCode,
-    ]);
-    return result.changes > 0;
+  deleteUrl(shortCode: string): boolean {
+    return this.urls.delete(shortCode);
   }
 
   close(): void {
-    this.db.close();
+    this.urls.clear();
   }
 }
 
-export const database = new Database();
+export const database = new InMemoryDatabase();
