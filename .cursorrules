@@ -1,0 +1,19 @@
+# Cursor Rules for URL Shortener Project
+
+## Code Style
+- Use ESLint for code formatting and linting
+- Auto-fix on save should work with ESLint
+- Remove excessive blank lines (max 1 blank line)
+- Use 2 spaces for indentation
+- Use single quotes for strings
+- Add semicolons at end of statements
+
+## File Structure
+- Keep TypeScript files in src/
+- Use .js extensions for imports in ESM mode
+- Follow Express.js best practices
+
+## Linting
+- Run `pnpm lint` to check for issues
+- Run `pnpm lint:fix` to auto-fix issues
+- ESLint should handle blank line removal automatically
