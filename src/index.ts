@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { type Request, type Response } from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import { database } from './database.js';
 import { generateShortCode, isValidUrl, normalizeUrl } from './utils.js';
 
@@ -126,9 +126,13 @@ app.get('/api/stats/:shortCode', (req: Request, res: Response) => {
   }
 });
 
+// 404 handler for unmatched routes
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 
-// Error handling middleware
-app.use((err: Error, req: Request, res: Response) => {
+// Error handling middleware (must be last)
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
