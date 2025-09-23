@@ -48,10 +48,6 @@ class InMemoryDatabase {
     );
   }
 
-  deleteUrl(shortCode: string): boolean {
-    return this.urls.delete(shortCode);
-  }
-
   close(): void {
     this.urls.clear();
   }

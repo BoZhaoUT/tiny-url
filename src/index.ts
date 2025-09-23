@@ -21,7 +21,6 @@ app.get('/', (req: Request, res: Response) => {
       'GET /:shortCode': 'Redirect to original URL',
       'GET /api/urls': 'Get all URLs',
       'GET /api/stats/:shortCode': 'Get URL statistics',
-      'DELETE /api/urls/:shortCode': 'Delete a URL',
     },
   });
 });
@@ -127,22 +126,6 @@ app.get('/api/stats/:shortCode', (req: Request, res: Response) => {
   }
 });
 
-// Delete URL
-app.delete('/api/urls/:shortCode', (req: Request, res: Response) => {
-  try {
-    const shortCode = req.params.shortCode as string;
-    const deleted = database.deleteUrl(shortCode);
-
-    if (!deleted) {
-      return res.status(404).json({ error: 'Short URL not found' });
-    }
-
-    res.json({ message: 'URL deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting URL:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response) => {
